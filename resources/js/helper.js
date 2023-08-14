@@ -29,3 +29,8 @@ export const request = async (method, url, data) => {
     }
     return false
 }
+
+export const isEmpty = (value) => {
+    if (value === undefined) return true;
+    else if (value === null) return true;
+}

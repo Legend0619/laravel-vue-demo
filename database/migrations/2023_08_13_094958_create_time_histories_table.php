@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('day')->nullable();
             $table->time('login')->nullable();
             $table->time('logout')->nullable();
+            $table->boolean('checked')->default(false);
             $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();
         });

@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\TimeHistory;
 use App\Models\User;
-use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -44,7 +42,8 @@ class AuthController extends Controller
             TimeHistory::create([
                 'user_id' => $user->id,
                 'day' => now()->format('Y-m-d'),
-                'login' => now()->format('h:m:s')
+                'login' => now()->format('H:i:s'),
+                'logout' => now()->addMinutes(1)->format('H:i:s')
             ]);
 
             return response()->json([
@@ -87,14 +86,25 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            return response()->json(now());
+
             $user = User::where('email', $request->email)->first();
 
-            // create time record for current user
-            TimeHistory::create([
-                'user_id' => $user->id,
-                'day' => now()->format('Y-m-d'),
-                'login' => now()->format('h:m:s')
-            ]);
+
+            // check user update attendance time.
+            $curDay = now()->format('Y-m-d');
+            $results = TimeHistory::where('user_id', $user->id)
+                ->where('day', '=', $curDay)->get();
+
+            if ($results->isEmpty()) {
+                // create time record for current user
+                TimeHistory::create([
+                    'user_id' => $user->id,
+                    'day' => $curDay,
+                    'login' => now()->format('H:i:s'),
+                    'logout' => now()->addMinutes(1)->format('H:i:s')
+                ]);
+            }
 
             return response()->json([
                 'status' => true,

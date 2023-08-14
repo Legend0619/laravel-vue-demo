@@ -13,6 +13,7 @@ class TimeHistory extends Model
         'day',
         'login',
         'logout',
+        'checked',
     ];
 
 }

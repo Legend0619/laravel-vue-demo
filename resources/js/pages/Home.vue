@@ -12,7 +12,7 @@
                 </button></span
             >
         </div>
-        <table class="table table-striped mx-auto">
+        <table class="table table-striped mx-auto w-full text-center">
             <thead>
                 <tr>
                     <th scope="col">Day</th>
@@ -26,20 +26,28 @@
                     <td class="p-2">{{ record.day }}</td>
                     <td class="p-2">
                         <VueTimepicker
-                            format="hh:mm:ss"
+                            v-if="!record.checked"
+                            format="HH:mm"
                             v-model="record.login"
-                        ></VueTimepicker>
+                            :hideClearButton="true"
+                        />
+                        <span v-else>{{ record.logout }}</span>
                     </td>
                     <td class="p-2">
                         <VueTimepicker
-                            format="hh:mm:ss"
+                            v-if="!record.checked"
+                            format="HH:mm"
                             v-model="record.logout"
-                        ></VueTimepicker>
+                            :hideClearButton="true"
+                            @onBlur="handleBlur(record, idx)"
+                        />
+                        <span v-else>{{ record.logout }}</span>
                     </td>
                     <td class="p-2">
                         <button
                             class="float-right bg-red-400 px-2 text-white font-bold rounded-md hover:bg-red-600"
                             @click="updateTime(record, idx)"
+                            v-show="!record.checked"
                         >
                             Update
                         </button>
@@ -52,7 +60,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { request } from "../helper";
+import { request, isEmpty } from "../helper";
 import VueTimepicker from "vue3-timepicker";
 import "vue3-timepicker/dist/VueTimepicker.css";
 
@@ -95,21 +103,34 @@ export default {
             router.push("/");
         };
 
+        const timeToString = (time) => {
+            if (isEmpty(time)) {
+                let now = new Date();
+                let hours = now.getHours();
+                let minutes = now.getMinutes();
+                let seconds = now.getSeconds();
+                return `${hours.toString().padStart(2, "0")}:${minutes
+                    .toString()
+                    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+            }
+            return typeof time == "string" ? time : `${time.hh}:${time.mm}`;
+        };
+
         const updateTime = async (record, idx) => {
             try {
+                const login = timeToString(record.login);
+                const logout = timeToString(record.logout);
+                if (login >= logout) {
+                    alert("logout time must later thant login time");
+                    return;
+                }
                 const req = await request("post", "/api/update_time", {
                     id: record.id,
-                    login:
-                        typeof record.login == "string"
-                            ? record.login
-                            : `${record.login.hh}:${record.login.mm}`,
-                    logout:
-                        typeof record.logout == "string"
-                            ? record.logout
-                            : `${record.logout.hh}:${record.logout.mm}`,
+                    login,
+                    logout,
                 });
-                if(req.data) alert(req.data);
-                history.value[idx] = record;
+                if (req.data) alert(req.data);
+                history.value[idx] = { ...record, checked: true };
             } catch (e) {
                 await router.push("/");
             }
@@ -119,6 +140,7 @@ export default {
             user,
             history,
             updateTime,
+            timeToString,
             handleLogout,
         };
     },

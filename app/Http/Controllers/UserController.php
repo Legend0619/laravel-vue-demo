@@ -21,8 +21,11 @@ class UserController extends Controller
     {
         $id = $request->id;
         $result = TimeHistory::where('id', '=', $id)->first();
+        if ($result->checked)
+            return response()->json("user can update once a day");
         $result->login = $request->login;
         $result->logout = $request->logout;
+        $result->checked = true;
         $result->save();
         return response()->json("success");
     }
